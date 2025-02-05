@@ -1,6 +1,5 @@
 {
   "name": "html-obfuscation",
-  "version": "1.0.0",
   "description": "A Vercel deployment that obfuscates HTML before serving it.",
   "main": "api/obfuscate.js",
   "type": "module",
