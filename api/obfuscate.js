@@ -32,10 +32,16 @@ export default async function handler(req, res) {
             return ">" + obfuscateText(text) + "<";
         });
 
+        // Set cache-control headers to prevent browser caching
         res.setHeader("Content-Type", "text/html");
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+        res.setHeader("Expires", "0");
+        res.setHeader("Pragma", "no-cache");
+
         return res.status(200).send(modifiedHTML);
     } catch (error) {
         console.error("Error fetching/modifying HTML:", error);
         return res.status(500).send("Error fetching or modifying HTML.");
     }
 }
+
