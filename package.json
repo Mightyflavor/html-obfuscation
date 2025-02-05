@@ -1,15 +1,13 @@
 {
-  "name": "html-obfuscation",
-  "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.0"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
