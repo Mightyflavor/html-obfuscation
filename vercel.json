@@ -1,12 +1,19 @@
 {
-    "builds": [
-      {
-        "src": "api/obfuscate.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "routes": [
-      { "src": "/(.*)", "dest": "/api/obfuscate.js" }
-    ]
-  }
-  
+  "name": "html-obfuscation",
+  "version": "1.0.0",
+  "description": "A Vercel deployment that obfuscates HTML before serving it.",
+  "main": "api/obfuscate.js",
+  "type": "module",
+  "scripts": {
+    "start": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": "18.x"
+  },
+  "license": "MIT"
+}
