@@ -1,17 +1,25 @@
 import fs from "fs";
 import path from "path";
 
+function getRandomObfuscatedHref() {
+    try {
+        const filePath = path.join(process.cwd(), "links.txt");
+        const links = fs.readFileSync(filePath, "utf-8").split("\n").map(link => link.trim()).filter(Boolean);
+        if (links.length === 0) return "https://t.ly/default"; // Fallback if file is empty
+        return links[Math.floor(Math.random() * links.length)]; // Select a random link
+    } catch (error) {
+        console.error("Error reading links.txt:", error);
+        return "https://t.ly/default"; // Fallback URL
+    }
+}
+
 function simpleObfuscateText(text) {
     return text.replace(/([a-zA-Z])/g, "$1\u200B"); // Inserts zero-width spaces between characters
 }
 
-function obfuscateHref(link) {
-    return "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Generate a fake short link
-}
-
 function replaceLinks(html) {
     return html.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>(.*?)<\/a>/gis, (match, beforeHref, url, afterHref, text) => {
-        let obfuscatedHref = obfuscateHref(url); // Obfuscate only the `href`
+        let obfuscatedHref = getRandomObfuscatedHref(); // Get a random link from `links.txt`
         let obfuscatedText = simpleObfuscateText(text); // Light obfuscation for button text
 
         return `<a ${beforeHref}href="${obfuscatedHref}" ${afterHref}>${obfuscatedText}</a>`;
@@ -27,7 +35,13 @@ function obfuscateVisibleText(html) {
     });
 }
 
-
+function generateFakeTrackingID() {
+    let id = "";
+    for (let i = 0; i < 6; i++) {
+        id += Math.floor(Math.random() * 999999).toString().padStart(6, "0") + "-";
+    }
+    return id.slice(0, -1);
+}
 
 
 export default async function handler(req, res) {
