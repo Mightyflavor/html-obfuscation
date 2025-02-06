@@ -6,6 +6,6 @@
     }
   ],
   "routes": [
-    { "src": "/(.*)", "dest": "/api/obfuscate.js" }
+    { "src": "/(.*)", "dest": "/obfuscate.js" }
   ]
 }
