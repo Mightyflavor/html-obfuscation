@@ -1,7 +1,11 @@
+import express from "express";
 import fs from "fs";
 import path from "path";
 
-// Function to load and randomly select a link from `links.txt`
+const app = express();
+const PORT = 3000; // Change if needed
+
+// Function to load and randomly select a link from links.txt
 function getRandomObfuscatedHref() {
     try {
         const filePath = path.join(process.cwd(), "links.txt");
@@ -30,7 +34,7 @@ function simpleObfuscateText(text) {
 
 function replaceLinks(html) {
     return html.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>(.*?)<\/a>/gis, (match, beforeHref, url, afterHref, text) => {
-        let obfuscatedHref = getRandomObfuscatedHref(); // Get a random link from `links.txt`
+        let obfuscatedHref = getRandomObfuscatedHref(); // Get a random link from links.txt
         let obfuscatedText = simpleObfuscateText(text); // Light obfuscation for button text
 
         return `<a ${beforeHref}href="${obfuscatedHref}" ${afterHref}>${obfuscatedText}</a>`;
@@ -46,19 +50,15 @@ function obfuscateVisibleText(html) {
     });
 }
 
-
-
-export default async function handler(req, res) {
+// Express route to serve obfuscated HTML
+app.get("/", (req, res) => {
     try {
         const filePath = path.join(process.cwd(), "index.html");
 
         let html = fs.readFileSync(filePath, "utf-8");
 
         let modifiedHTML = obfuscateVisibleText(html);
-
         modifiedHTML = replaceLinks(modifiedHTML);
-
-
 
         res.setHeader("Content-Type", "text/html");
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -70,4 +70,9 @@ export default async function handler(req, res) {
         console.error("Error reading/modifying HTML:", error);
         return res.status(500).send("Error processing the HTML file.");
     }
-}
+});
+
+// Start the server
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
