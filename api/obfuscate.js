@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-// Function to generate a random obfuscation span
+// Function to generate a random obfuscation span (CSS `content` property injection)
 function randomObfuscationSpan() {
     const randomString = Math.random().toString(36).substring(2, 6);
     return `<span style='content:"${randomString}";'></span>`;
@@ -16,30 +16,28 @@ function injectZeroWidthCharacters(text) {
     });
 }
 
-// Function to obfuscate text using multiple techniques
+// Function to obfuscate text while keeping HTML structure intact
 function obfuscateText(text) {
     let obfuscated = text.replace(/([a-zA-Z0-9])/g, (match) => {
         return match + randomObfuscationSpan();
     });
-    return injectZeroWidthCharacters(obfuscated); // Additional zero-width encoding
+    return injectZeroWidthCharacters(obfuscated); // Adds zero-width characters for anti-detection
 }
 
-// Function to obfuscate visible links and replace actual URLs
+// Function to replace links while keeping the original button/link appearance intact
 function replaceLinks(html) {
     return html.replace(/<a\s+([^>]*?)href="([^"]+)"([^>]*)>(.*?)<\/a>/gis, (match, beforeHref, url, afterHref, text) => {
-        let fakeRedirect = "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Shortened URL
+        let fakeRedirect = "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Generate a fake short link
         let obfuscatedText = obfuscateText(text); // Obfuscate displayed link text
-        let obfuscatedURL = obfuscateText(url); // Obfuscate visible URL
 
-        // Preserve original styles, attributes, and inline styling
+        // Return the full <a> tag but with the fake redirect while keeping the original styles intact
         return `<a ${beforeHref}href="${fakeRedirect}" ${afterHref}>${obfuscatedText}</a>`;
     });
 }
 
 
 
-
-// API Handler to serve obfuscated HTML
+// API Handler to serve the obfuscated HTML while preserving styles
 export default async function handler(req, res) {
     try {
         // Get the absolute path of the index.html file
@@ -56,9 +54,10 @@ export default async function handler(req, res) {
             return match;
         });
 
-        // Obfuscate all links while preserving styles
+        // Obfuscate all links while keeping styling intact
         modifiedHTML = replaceLinks(modifiedHTML);
 
+    
         // Set cache-control headers to prevent caching & ensure fresh obfuscation on each reload
         res.setHeader("Content-Type", "text/html");
         res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
