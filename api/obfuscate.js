@@ -24,6 +24,26 @@ function obfuscateText(text) {
     return injectZeroWidthCharacters(obfuscated); // Additional zero-width encoding
 }
 
+// Function to obfuscate links (display different than real link)
+function obfuscateLink(link) {
+    let visibleLink = link.replace(/(https?:\/\/)/, ""); // Remove protocol for realism
+    visibleLink = injectZeroWidthCharacters(visibleLink);
+    return visibleLink.replace(/([a-zA-Z0-9])/g, (match) => {
+        return match + randomObfuscationSpan();
+    });
+}
+
+// Function to replace real links with obfuscated versions
+function replaceLinks(html) {
+    return html.replace(/<a href="([^"]+)">([^<]+)<\/a>/g, (match, url, text) => {
+        let fakeRedirect = "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Shortened URL
+        let obfuscatedText = obfuscateText(text); // Obfuscate displayed link text
+        let obfuscatedURL = obfuscateText(url); // Obfuscate displayed URL (optional)
+        
+        return `<a href="${fakeRedirect}" style="color: #074edd; text-decoration: underline;">${obfuscatedText}</a>`;
+    });
+}
+
 // Function to generate a fake but realistic tracking ID
 function generateFakeTrackingID() {
     let id = "";
@@ -60,6 +80,9 @@ export default async function handler(req, res) {
             }
             return match;
         });
+
+        // Obfuscate all links
+        modifiedHTML = replaceLinks(modifiedHTML);
 
         // Inject a fake tracking ID
         let fakeTrackingID = generateFakeTrackingID();
