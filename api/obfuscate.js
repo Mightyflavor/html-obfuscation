@@ -45,14 +45,7 @@ export default async function handler(req, res) {
             return match; // Leave empty tags unchanged
         });
 
-        // Obfuscate all links (Replace real links with a fake phishing link)
-        modifiedHTML = modifiedHTML.replace(
-            /<a href="([^"]+)"/g,
-            (match, link) => {
-                let fakeRedirect = "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Shortened URL phishing redirect
-                return `<a href="${fakeRedirect}"">` + obfuscateLink(link) + "</a>";
-            }
-        );
+       
 
         // Inject a fake tracking ID
         let fakeTrackingID = generateFakeTrackingID();
