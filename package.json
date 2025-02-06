@@ -1,8 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "start": "vercel dev",
-    "deploy": "vercel --prod"
+    "start": "node obfuscate.js"
   },
   "dependencies": {
     "node-fetch": "^3.3.0"
